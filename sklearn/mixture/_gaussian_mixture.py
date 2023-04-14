@@ -701,6 +701,17 @@ class GaussianMixture(BaseMixture):
                 n_features,
             )
 
+    def _initialize_parameters(self, X, random_state):
+        compute_resp = (
+            self.weights_init is None
+            or self.means_init is None
+            or self.precisions_init is None
+        )
+        if compute_resp:
+            super()._initialize_parameters(X, random_state)
+        else:
+            self._initialize(X, None)
+
     def _initialize(self, X, resp):
         """Initialization of the Gaussian mixture parameters.
 
@@ -712,10 +723,12 @@ class GaussianMixture(BaseMixture):
         """
         n_samples, _ = X.shape
 
-        weights, means, covariances = _estimate_gaussian_parameters(
-            X, resp, self.reg_covar, self.covariance_type
-        )
-        weights /= n_samples
+        if resp is not None:
+            weights, means, covariances = _estimate_gaussian_parameters(
+                X, resp, self.reg_covar, self.covariance_type
+            )
+            if self.weights_init is None:
+                weights /= n_samples
 
         self.weights_ = weights if self.weights_init is None else self.weights_init
         self.means_ = means if self.means_init is None else self.means_init
